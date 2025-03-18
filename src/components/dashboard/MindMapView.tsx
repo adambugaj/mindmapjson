@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Plus, Minus } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Minus,
+  ExternalLink,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/tooltip";
+import { Card, CardContent } from "../ui/card";
+import { Badge } from "../ui/badge";
 import { Progress } from "../ui/progress";
 
 export interface Domain {
@@ -114,7 +117,7 @@ const MindMapView: React.FC<MindMapViewProps> = ({
   const zoomOut = () => setZoom((prev) => Math.max(prev - 0.1, 0.5));
 
   return (
-    <div className="w-full h-full bg-white p-4 rounded-md shadow-sm flex flex-col">
+    <div className="w-full h-[calc(100vh-200px)] bg-white p-4 rounded-md shadow-sm flex flex-col">
       <div className="flex items-center mb-4 gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -147,91 +150,128 @@ const MindMapView: React.FC<MindMapViewProps> = ({
           }}
         >
           {/* Central hub */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-100 border-2 border-blue-300 rounded-full w-32 h-32 flex items-center justify-center z-10 shadow-md">
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white rounded-full w-32 h-32 flex items-center justify-center z-10 shadow-lg">
             <div className="text-center">
               <div className="font-bold">Domain Hub</div>
-              <div className="text-sm text-gray-600">
-                {filteredDomains.length} domains
-              </div>
+              <div className="text-sm">{filteredDomains.length} domains</div>
             </div>
           </div>
 
-          {/* Domain nodes */}
-          {filteredDomains.map((domain, index) => {
-            const progress = calculateProgress(domain.tasks);
-            const angle =
-              index * (360 / filteredDomains.length) * (Math.PI / 180);
-            const radius = 200; // Distance from center
-            const x = Math.cos(angle) * radius;
-            const y = Math.sin(angle) * radius;
-
-            return (
-              <TooltipProvider key={domain.id}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <motion.div
-                      className={`absolute cursor-pointer ${getNodeColor(progress)} border-2 rounded-lg w-40 h-28 flex flex-col items-center justify-center shadow-md`}
-                      style={{
-                        left: `calc(50% + ${x}px)`,
-                        top: `calc(50% + ${y}px)`,
-                        transform: "translate(-50%, -50%)",
-                      }}
-                      whileHover={{ scale: 1.05 }}
-                      onClick={() => onDomainSelect(domain)}
-                    >
-                      <div className="text-center p-2">
-                        <div className="font-semibold truncate w-full">
-                          {domain.name}
-                        </div>
-                        <div className="text-xs text-gray-600 truncate w-full">
-                          {domain.url}
-                        </div>
-                        <div className="mt-2 w-full px-2">
-                          <Progress value={progress} className="h-2" />
-                          <div className="text-xs text-center mt-1">
-                            {Math.round(progress)}%
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div>
-                      <div className="font-bold">{domain.name}</div>
-                      <div className="text-xs">{domain.url}</div>
-                      <div className="mt-1 text-xs">
-                        Progress: {Math.round(progress)}%
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          })}
-
-          {/* Connection lines */}
-          <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
-            {filteredDomains.map((domain, index) => {
-              const angle =
-                index * (360 / filteredDomains.length) * (Math.PI / 180);
-              const radius = 200;
-              const x = Math.cos(angle) * radius;
-              const y = Math.sin(angle) * radius;
+          {/* Domain nodes in a simplified grid layout */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-40">
+            {filteredDomains.map((domain) => {
+              const progress = calculateProgress(domain.tasks);
+              const progressColor =
+                progress < 30
+                  ? "bg-red-500"
+                  : progress < 60
+                    ? "bg-yellow-500"
+                    : "bg-green-500";
 
               return (
-                <line
+                <Card
                   key={domain.id}
-                  x1="50%"
-                  y1="50%"
-                  x2={`calc(50% + ${x}px)`}
-                  y2={`calc(50% + ${y}px)`}
-                  stroke="#CBD5E0"
-                  strokeWidth="2"
-                  strokeDasharray="5,5"
-                />
+                  className="w-full cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-105"
+                  onClick={() => onDomainSelect(domain)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-medium truncate">{domain.name}</h3>
+                      <a
+                        href={domain.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:text-blue-700"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </div>
+
+                    <div className="mt-2 mb-3">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span>Progress</span>
+                        <span className="font-medium">{progress}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${progressColor}`}
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-1 text-xs">
+                      <div className="flex items-center gap-1">
+                        {domain.tasks.installation ? (
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <XCircle className="h-3 w-3 text-gray-300" />
+                        )}
+                        <span
+                          className={
+                            domain.tasks.installation
+                              ? "text-green-700"
+                              : "text-gray-500"
+                          }
+                        >
+                          Install
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {domain.tasks.configuration ? (
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <XCircle className="h-3 w-3 text-gray-300" />
+                        )}
+                        <span
+                          className={
+                            domain.tasks.configuration
+                              ? "text-green-700"
+                              : "text-gray-500"
+                          }
+                        >
+                          Config
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {domain.tasks.gscSetup ? (
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <XCircle className="h-3 w-3 text-gray-300" />
+                        )}
+                        <span
+                          className={
+                            domain.tasks.gscSetup
+                              ? "text-green-700"
+                              : "text-gray-500"
+                          }
+                        >
+                          GSC
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {domain.tasks.content ? (
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                        ) : (
+                          <XCircle className="h-3 w-3 text-gray-300" />
+                        )}
+                        <span
+                          className={
+                            domain.tasks.content
+                              ? "text-green-700"
+                              : "text-gray-500"
+                          }
+                        >
+                          Content
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               );
             })}
-          </svg>
+          </div>
         </motion.div>
       </div>
     </div>

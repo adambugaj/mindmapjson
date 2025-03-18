@@ -48,7 +48,10 @@ const DashboardHeader = ({
           </TabsList>
         </Tabs>
 
-        <Button onClick={onAddDomain} className="flex items-center gap-2">
+        <Button
+          onClick={onAddDomain}
+          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+        >
           <PlusCircle className="h-4 w-4" />
           Add Domain
         </Button>

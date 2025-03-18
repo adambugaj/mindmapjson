@@ -65,6 +65,27 @@ export const addDomain = (
 ): Domain => {
   const domains = loadDomains();
 
+  // Check for duplicates by normalizing URLs and names
+  const normalizedUrl = domainData.url
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/$/, "");
+  const normalizedName = domainData.name.toLowerCase();
+
+  // Check if domain already exists
+  const existingDomain = domains.find((domain) => {
+    const existingUrl = domain.url
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/\/$/, "");
+    const existingName = domain.name.toLowerCase();
+    return existingUrl === normalizedUrl || existingName === normalizedName;
+  });
+
+  if (existingDomain) {
+    return existingDomain; // Return existing domain instead of creating duplicate
+  }
+
   const newDomain: Domain = {
     id: generateId(),
     ...domainData,
@@ -77,6 +98,57 @@ export const addDomain = (
   saveDomains(domains);
 
   return newDomain;
+};
+
+// Add multiple domains at once
+export const addMultipleDomains = (domainUrls: string[]): Domain[] => {
+  const domains = loadDomains();
+  const newDomains: Domain[] = [];
+  const processedUrls = new Set(); // Track processed URLs to avoid duplicates
+
+  domainUrls.forEach((url) => {
+    // Normalize URL for comparison
+    const normalizedUrl = url
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/\/$/, "");
+
+    // Skip if we've already processed this URL or if it exists in the domains
+    if (processedUrls.has(normalizedUrl)) return;
+
+    // Check if domain already exists
+    const existingDomain = domains.find((domain) => {
+      const existingUrl = domain.url
+        .toLowerCase()
+        .replace(/^https?:\/\//, "")
+        .replace(/\/$/, "");
+      return existingUrl === normalizedUrl;
+    });
+
+    if (existingDomain) {
+      newDomains.push(existingDomain);
+      return;
+    }
+
+    // Extract domain name from URL
+    let name = normalizedUrl;
+
+    const newDomain: Domain = {
+      id: generateId(),
+      name: name,
+      url: url.startsWith("http") ? url : `https://${url}`,
+      tasks: DEFAULT_TASKS.map((task) => ({ ...task, id: generateId() })),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    domains.push(newDomain);
+    newDomains.push(newDomain);
+    processedUrls.add(normalizedUrl);
+  });
+
+  saveDomains(domains);
+  return newDomains;
 };
 
 // Update an existing domain

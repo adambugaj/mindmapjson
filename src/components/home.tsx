@@ -4,6 +4,7 @@ import DomainTable from "./dashboard/DomainTable";
 import MindMapView from "./dashboard/MindMapView";
 import AddDomainDialog from "./dashboard/AddDomainDialog";
 import DomainTasksDialog from "./dashboard/DomainTasksDialog";
+import AddInitialDomains from "./dashboard/AddInitialDomains";
 import {
   loadDomains,
   addDomain,
@@ -28,6 +29,7 @@ const Home = () => {
   const [isAddDomainOpen, setIsAddDomainOpen] = useState(false);
   const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
   const [isTasksDialogOpen, setIsTasksDialogOpen] = useState(false);
+  const [initialDomainsAdded, setInitialDomainsAdded] = useState(false);
 
   // Load domains on component mount
   useEffect(() => {
@@ -40,6 +42,7 @@ const Home = () => {
   };
 
   const handleAddDomain = () => {
+    setSelectedDomain(null); // Clear any selected domain to ensure we're adding a new one
     setIsAddDomainOpen(true);
   };
 
@@ -65,12 +68,38 @@ const Home = () => {
   };
 
   const handleViewTasks = (domain: Domain) => {
+    // If domain has tasks property with boolean values, update it directly without opening dialog
+    if (domain.tasks && typeof Object.values(domain.tasks)[0] === "boolean") {
+      const updated = updateDomain(domain);
+      setDomains((prev) =>
+        prev.map((d) => (d.id === updated.id ? updated : d)),
+      );
+      return;
+    }
+
+    // Only open dialog if explicitly requested (e.g., from the tasks button)
     setSelectedDomain(domain);
     setIsTasksDialogOpen(true);
   };
 
   const handleSaveTasks = (updatedDomain: any) => {
-    const updated = updateDomain(updatedDomain);
+    // Convert task array to object format expected by DomainTable
+    const tasksObject: Record<string, boolean> = {};
+    if (Array.isArray(updatedDomain.tasks)) {
+      updatedDomain.tasks.forEach((task: any) => {
+        tasksObject[task.id] = task.completed;
+      });
+    }
+
+    // Create updated domain with tasks in the correct format
+    const domainToUpdate = {
+      ...updatedDomain,
+      tasks: Array.isArray(updatedDomain.tasks)
+        ? tasksObject
+        : updatedDomain.tasks,
+    };
+
+    const updated = updateDomain(domainToUpdate);
     setDomains((prev) =>
       prev.map((domain) => (domain.id === updated.id ? updated : domain)),
     );
@@ -78,6 +107,15 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {!initialDomainsAdded && domains.length === 0 && (
+        <AddInitialDomains
+          onComplete={() => {
+            setInitialDomainsAdded(true);
+            setDomains(loadDomains());
+          }}
+        />
+      )}
+
       <DashboardHeader
         onAddDomain={handleAddDomain}
         onViewChange={handleViewChange}

@@ -21,7 +21,7 @@ interface Domain {
   id: string;
   name: string;
   url: string;
-  tasks: Task[];
+  tasks: Task[] | Record<string, boolean>;
   notes?: string;
 }
 
@@ -57,7 +57,20 @@ const DomainTasksDialog: React.FC<DomainTasksDialogProps> = ({
   onOpenChange,
   onSave,
 }) => {
-  const [localDomain, setLocalDomain] = useState<Domain>(domain);
+  // Convert tasks object to array if needed
+  const initialDomain = {
+    ...domain,
+    tasks: Array.isArray(domain.tasks)
+      ? domain.tasks
+      : Object.entries(domain.tasks).map(([id, completed]) => ({
+          id,
+          name:
+            id.charAt(0).toUpperCase() + id.slice(1).replace(/([A-Z])/g, " $1"),
+          completed: completed as boolean,
+        })),
+  };
+
+  const [localDomain, setLocalDomain] = useState<Domain>(initialDomain);
 
   const handleTaskToggle = (taskId: string) => {
     setLocalDomain((prev) => {
@@ -85,10 +98,9 @@ const DomainTasksDialog: React.FC<DomainTasksDialogProps> = ({
   };
 
   // Calculate completion percentage
-  const completedTasks = localDomain.tasks.filter(
-    (task) => task.completed,
-  ).length;
-  const totalTasks = localDomain.tasks.length;
+  const tasks = Array.isArray(localDomain.tasks) ? localDomain.tasks : [];
+  const completedTasks = tasks.filter((task) => task.completed).length;
+  const totalTasks = tasks.length;
   const completionPercentage = Math.round((completedTasks / totalTasks) * 100);
 
   return (
@@ -114,25 +126,26 @@ const DomainTasksDialog: React.FC<DomainTasksDialogProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {localDomain.tasks.map((task) => (
-              <div
-                key={task.id}
-                className="flex items-start space-x-2 p-2 border rounded hover:bg-gray-50"
-              >
-                <Checkbox
-                  id={`task-${task.id}`}
-                  checked={task.completed}
-                  onCheckedChange={() => handleTaskToggle(task.id)}
-                  className="mt-1"
-                />
-                <label
-                  htmlFor={`task-${task.id}`}
-                  className={`text-sm cursor-pointer ${task.completed ? "line-through text-gray-500" : ""}`}
+            {Array.isArray(localDomain.tasks) &&
+              localDomain.tasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="flex items-start space-x-2 p-2 border rounded hover:bg-gray-50"
                 >
-                  {task.name}
-                </label>
-              </div>
-            ))}
+                  <Checkbox
+                    id={`task-${task.id}`}
+                    checked={task.completed}
+                    onCheckedChange={() => handleTaskToggle(task.id)}
+                    className="mt-1"
+                  />
+                  <label
+                    htmlFor={`task-${task.id}`}
+                    className={`text-sm cursor-pointer ${task.completed ? "line-through text-gray-500" : ""}`}
+                  >
+                    {task.name}
+                  </label>
+                </div>
+              ))}
           </div>
 
           <div className="mb-4">

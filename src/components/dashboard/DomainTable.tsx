@@ -25,8 +25,11 @@ import {
   Filter,
   SortAsc,
   SortDesc,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Progress } from "../ui/progress";
+import { Checkbox } from "../ui/checkbox";
 
 export interface Domain {
   id: string;
@@ -43,6 +46,7 @@ export interface Domain {
     monetization: boolean;
   };
   createdAt: string;
+  showTasks?: boolean;
 }
 
 interface DomainTableProps {
@@ -107,7 +111,9 @@ const DomainTable: React.FC<DomainTableProps> = ({
   onDelete = () => {},
   onViewTasks = () => {},
 }) => {
-  const [filteredDomains, setFilteredDomains] = useState<Domain[]>(domains);
+  const [filteredDomains, setFilteredDomains] = useState<Domain[]>(
+    domains.map((domain) => ({ ...domain, showTasks: false })),
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{
     key: keyof Domain | null;
@@ -152,7 +158,16 @@ const DomainTable: React.FC<DomainTableProps> = ({
       return 0;
     });
 
-    setFilteredDomains(sorted);
+    // Preserve showTasks state when filtering/sorting
+    const newFilteredDomains = sorted.map((domain) => {
+      const existingDomain = filteredDomains.find((d) => d.id === domain.id);
+      return {
+        ...domain,
+        showTasks: existingDomain ? existingDomain.showTasks : false,
+      };
+    });
+
+    setFilteredDomains(newFilteredDomains);
   }, [domains, searchTerm, sortConfig]);
 
   const handleSort = (key: keyof Domain) => {
@@ -205,7 +220,6 @@ const DomainTable: React.FC<DomainTableProps> = ({
         <TableCaption>List of managed PBN domains</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[80px]">ID</TableHead>
             <TableHead
               className="cursor-pointer"
               onClick={() => handleSort("name")}
@@ -234,7 +248,8 @@ const DomainTable: React.FC<DomainTableProps> = ({
                   ))}
               </div>
             </TableHead>
-            <TableHead>Progress</TableHead>
+            <TableHead className="hidden md:table-cell">Progress</TableHead>
+            <TableHead className="hidden md:table-cell">Tasks</TableHead>
             <TableHead
               className="cursor-pointer"
               onClick={() => handleSort("createdAt")}
@@ -257,65 +272,460 @@ const DomainTable: React.FC<DomainTableProps> = ({
             filteredDomains.map((domain) => {
               const progress = calculateProgress(domain.tasks);
               return (
-                <TableRow key={domain.id}>
-                  <TableCell className="font-medium">{domain.id}</TableCell>
-                  <TableCell>{domain.name}</TableCell>
-                  <TableCell>
-                    <a
-                      href={domain.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      {domain.url}
-                    </a>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Progress value={progress} className="h-2 w-24" />
-                      <span className="text-sm">{Math.round(progress)}%</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(domain.createdAt).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => onViewTasks(domain)}
-                        title="View Tasks"
+                <React.Fragment key={domain.id}>
+                  <TableRow>
+                    <TableCell>{domain.name}</TableCell>
+                    <TableCell>
+                      <a
+                        href={domain.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
                       >
-                        <CheckSquare className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => onEdit(domain)}
-                        title="Edit Domain"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            className="text-red-600 focus:text-red-600"
-                            onClick={() => onDelete(domain)}
+                        {domain.url}
+                      </a>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <div className="flex items-center gap-2">
+                        <Progress value={progress} className="h-2 w-24" />
+                        <span className="text-sm">{Math.round(progress)}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex gap-1">
+                          <Checkbox
+                            id={`installation-${domain.id}`}
+                            checked={domain.tasks.installation}
+                            onCheckedChange={() =>
+                              onViewTasks({
+                                ...domain,
+                                tasks: {
+                                  ...domain.tasks,
+                                  installation: !domain.tasks.installation,
+                                },
+                              })
+                            }
+                            className="h-4 w-4"
+                          />
+                          <label
+                            htmlFor={`installation-${domain.id}`}
+                            className="text-xs"
                           >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </TableRow>
+                            Install
+                          </label>
+                        </div>
+                        <div className="flex gap-1">
+                          <Checkbox
+                            id={`configuration-${domain.id}`}
+                            checked={domain.tasks.configuration}
+                            onCheckedChange={() =>
+                              onViewTasks({
+                                ...domain,
+                                tasks: {
+                                  ...domain.tasks,
+                                  configuration: !domain.tasks.configuration,
+                                },
+                              })
+                            }
+                            className="h-4 w-4"
+                          />
+                          <label
+                            htmlFor={`configuration-${domain.id}`}
+                            className="text-xs"
+                          >
+                            Config
+                          </label>
+                        </div>
+                        <div className="flex gap-1">
+                          <Checkbox
+                            id={`gscSetup-${domain.id}`}
+                            checked={domain.tasks.gscSetup}
+                            onCheckedChange={() =>
+                              onViewTasks({
+                                ...domain,
+                                tasks: {
+                                  ...domain.tasks,
+                                  gscSetup: !domain.tasks.gscSetup,
+                                },
+                              })
+                            }
+                            className="h-4 w-4"
+                          />
+                          <label
+                            htmlFor={`gscSetup-${domain.id}`}
+                            className="text-xs"
+                          >
+                            GSC
+                          </label>
+                        </div>
+                        <div className="flex gap-1">
+                          <Checkbox
+                            id={`content-${domain.id}`}
+                            checked={domain.tasks.content}
+                            onCheckedChange={() =>
+                              onViewTasks({
+                                ...domain,
+                                tasks: {
+                                  ...domain.tasks,
+                                  content: !domain.tasks.content,
+                                },
+                              })
+                            }
+                            className="h-4 w-4"
+                          />
+                          <label
+                            htmlFor={`content-${domain.id}`}
+                            className="text-xs"
+                          >
+                            Content
+                          </label>
+                        </div>
+                        <div className="flex gap-1">
+                          <Checkbox
+                            id={`wwwStatus-${domain.id}`}
+                            checked={domain.tasks.wwwStatus}
+                            onCheckedChange={() =>
+                              onViewTasks({
+                                ...domain,
+                                tasks: {
+                                  ...domain.tasks,
+                                  wwwStatus: !domain.tasks.wwwStatus,
+                                },
+                              })
+                            }
+                            className="h-4 w-4"
+                          />
+                          <label
+                            htmlFor={`wwwStatus-${domain.id}`}
+                            className="text-xs"
+                          >
+                            WWW
+                          </label>
+                        </div>
+                        <div className="flex gap-1">
+                          <Checkbox
+                            id={`uxPublishing-${domain.id}`}
+                            checked={domain.tasks.uxPublishing}
+                            onCheckedChange={() =>
+                              onViewTasks({
+                                ...domain,
+                                tasks: {
+                                  ...domain.tasks,
+                                  uxPublishing: !domain.tasks.uxPublishing,
+                                },
+                              })
+                            }
+                            className="h-4 w-4"
+                          />
+                          <label
+                            htmlFor={`uxPublishing-${domain.id}`}
+                            className="text-xs"
+                          >
+                            UX
+                          </label>
+                        </div>
+                        <div className="flex gap-1">
+                          <Checkbox
+                            id={`traffic-${domain.id}`}
+                            checked={domain.tasks.traffic}
+                            onCheckedChange={() =>
+                              onViewTasks({
+                                ...domain,
+                                tasks: {
+                                  ...domain.tasks,
+                                  traffic: !domain.tasks.traffic,
+                                },
+                              })
+                            }
+                            className="h-4 w-4"
+                          />
+                          <label
+                            htmlFor={`traffic-${domain.id}`}
+                            className="text-xs"
+                          >
+                            Traffic
+                          </label>
+                        </div>
+                        <div className="flex gap-1">
+                          <Checkbox
+                            id={`monetization-${domain.id}`}
+                            checked={domain.tasks.monetization}
+                            onCheckedChange={() =>
+                              onViewTasks({
+                                ...domain,
+                                tasks: {
+                                  ...domain.tasks,
+                                  monetization: !domain.tasks.monetization,
+                                },
+                              })
+                            }
+                            className="h-4 w-4"
+                          />
+                          <label
+                            htmlFor={`monetization-${domain.id}`}
+                            className="text-xs"
+                          >
+                            Money
+                          </label>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(domain.createdAt).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="md:hidden"
+                          onClick={() => {
+                            setFilteredDomains((prev) =>
+                              prev.map((d) =>
+                                d.id === domain.id
+                                  ? { ...d, showTasks: !d.showTasks }
+                                  : d,
+                              ),
+                            );
+                          }}
+                          title="Toggle Tasks"
+                        >
+                          {domain.showTasks ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => onViewTasks(domain)}
+                          title="View Tasks"
+                        >
+                          <CheckSquare className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => onEdit(domain)}
+                          title="Edit Domain"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              className="text-red-600 focus:text-red-600"
+                              onClick={() => onDelete(domain)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  {domain.showTasks && (
+                    <TableRow className="md:hidden">
+                      <TableCell colSpan={5} className="p-2">
+                        <div className="bg-gray-50 p-3 rounded-md">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Progress value={progress} className="h-2 flex-1" />
+                            <span className="text-sm">
+                              {Math.round(progress)}%
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="flex gap-1 items-center">
+                              <Checkbox
+                                id={`mobile-installation-${domain.id}`}
+                                checked={domain.tasks.installation}
+                                onCheckedChange={() =>
+                                  onViewTasks({
+                                    ...domain,
+                                    tasks: {
+                                      ...domain.tasks,
+                                      installation: !domain.tasks.installation,
+                                    },
+                                  })
+                                }
+                                className="h-4 w-4"
+                              />
+                              <label
+                                htmlFor={`mobile-installation-${domain.id}`}
+                                className="text-sm"
+                              >
+                                Installation
+                              </label>
+                            </div>
+                            <div className="flex gap-1 items-center">
+                              <Checkbox
+                                id={`mobile-configuration-${domain.id}`}
+                                checked={domain.tasks.configuration}
+                                onCheckedChange={() =>
+                                  onViewTasks({
+                                    ...domain,
+                                    tasks: {
+                                      ...domain.tasks,
+                                      configuration:
+                                        !domain.tasks.configuration,
+                                    },
+                                  })
+                                }
+                                className="h-4 w-4"
+                              />
+                              <label
+                                htmlFor={`mobile-configuration-${domain.id}`}
+                                className="text-sm"
+                              >
+                                Configuration
+                              </label>
+                            </div>
+                            <div className="flex gap-1 items-center">
+                              <Checkbox
+                                id={`mobile-gscSetup-${domain.id}`}
+                                checked={domain.tasks.gscSetup}
+                                onCheckedChange={() =>
+                                  onViewTasks({
+                                    ...domain,
+                                    tasks: {
+                                      ...domain.tasks,
+                                      gscSetup: !domain.tasks.gscSetup,
+                                    },
+                                  })
+                                }
+                                className="h-4 w-4"
+                              />
+                              <label
+                                htmlFor={`mobile-gscSetup-${domain.id}`}
+                                className="text-sm"
+                              >
+                                GSC Setup
+                              </label>
+                            </div>
+                            <div className="flex gap-1 items-center">
+                              <Checkbox
+                                id={`mobile-content-${domain.id}`}
+                                checked={domain.tasks.content}
+                                onCheckedChange={() =>
+                                  onViewTasks({
+                                    ...domain,
+                                    tasks: {
+                                      ...domain.tasks,
+                                      content: !domain.tasks.content,
+                                    },
+                                  })
+                                }
+                                className="h-4 w-4"
+                              />
+                              <label
+                                htmlFor={`mobile-content-${domain.id}`}
+                                className="text-sm"
+                              >
+                                Content
+                              </label>
+                            </div>
+                            <div className="flex gap-1 items-center">
+                              <Checkbox
+                                id={`mobile-wwwStatus-${domain.id}`}
+                                checked={domain.tasks.wwwStatus}
+                                onCheckedChange={() =>
+                                  onViewTasks({
+                                    ...domain,
+                                    tasks: {
+                                      ...domain.tasks,
+                                      wwwStatus: !domain.tasks.wwwStatus,
+                                    },
+                                  })
+                                }
+                                className="h-4 w-4"
+                              />
+                              <label
+                                htmlFor={`mobile-wwwStatus-${domain.id}`}
+                                className="text-sm"
+                              >
+                                WWW Status
+                              </label>
+                            </div>
+                            <div className="flex gap-1 items-center">
+                              <Checkbox
+                                id={`mobile-uxPublishing-${domain.id}`}
+                                checked={domain.tasks.uxPublishing}
+                                onCheckedChange={() =>
+                                  onViewTasks({
+                                    ...domain,
+                                    tasks: {
+                                      ...domain.tasks,
+                                      uxPublishing: !domain.tasks.uxPublishing,
+                                    },
+                                  })
+                                }
+                                className="h-4 w-4"
+                              />
+                              <label
+                                htmlFor={`mobile-uxPublishing-${domain.id}`}
+                                className="text-sm"
+                              >
+                                UX Publishing
+                              </label>
+                            </div>
+                            <div className="flex gap-1 items-center">
+                              <Checkbox
+                                id={`mobile-traffic-${domain.id}`}
+                                checked={domain.tasks.traffic}
+                                onCheckedChange={() =>
+                                  onViewTasks({
+                                    ...domain,
+                                    tasks: {
+                                      ...domain.tasks,
+                                      traffic: !domain.tasks.traffic,
+                                    },
+                                  })
+                                }
+                                className="h-4 w-4"
+                              />
+                              <label
+                                htmlFor={`mobile-traffic-${domain.id}`}
+                                className="text-sm"
+                              >
+                                Traffic
+                              </label>
+                            </div>
+                            <div className="flex gap-1 items-center">
+                              <Checkbox
+                                id={`mobile-monetization-${domain.id}`}
+                                checked={domain.tasks.monetization}
+                                onCheckedChange={() =>
+                                  onViewTasks({
+                                    ...domain,
+                                    tasks: {
+                                      ...domain.tasks,
+                                      monetization: !domain.tasks.monetization,
+                                    },
+                                  })
+                                }
+                                className="h-4 w-4"
+                              />
+                              <label
+                                htmlFor={`mobile-monetization-${domain.id}`}
+                                className="text-sm"
+                              >
+                                Monetization
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
               );
             })
           ) : (

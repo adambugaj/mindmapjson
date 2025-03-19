@@ -5,20 +5,12 @@ import MindMapView from "./dashboard/MindMapView";
 import AddDomainDialog from "./dashboard/AddDomainDialog";
 import DomainTasksDialog from "./dashboard/DomainTasksDialog";
 import AddInitialDomains from "./dashboard/AddInitialDomains";
-import AirtableConfigDialog from "./dashboard/AirtableConfigDialog";
 import {
   loadDomains,
   addDomain,
   updateDomain,
   deleteDomain,
 } from "../lib/domainStorage";
-import {
-  fetchDomains as fetchAirtableDomains,
-  createDomain as createAirtableDomain,
-  updateDomain as updateAirtableDomain,
-  deleteDomain as deleteAirtableDomain,
-  setAirtableConfig,
-} from "../lib/airtableClient";
 
 // Define Domain type locally instead of importing it
 interface Domain {
@@ -40,37 +32,11 @@ const Home = () => {
   const [selectedDomain, setSelectedDomain] = useState<Domain | null>(null);
   const [isTasksDialogOpen, setIsTasksDialogOpen] = useState(false);
   const [initialDomainsAdded, setInitialDomainsAdded] = useState(false);
-  const [isAirtableConfigOpen, setIsAirtableConfigOpen] = useState(false);
-  const [usingAirtable, setUsingAirtable] = useState(false);
 
-  // Load domains and check for Airtable config on component mount
+  // Load domains on component mount
   useEffect(() => {
-    const loadData = async () => {
-      // Check if Airtable is configured
-      const airtableConfigStr = localStorage.getItem("airtableConfig");
-      if (airtableConfigStr) {
-        try {
-          const config = JSON.parse(airtableConfigStr);
-          setAirtableConfig(config);
-          setUsingAirtable(true);
-
-          // Load domains from Airtable
-          const airtableDomains = await fetchAirtableDomains();
-          if (airtableDomains && airtableDomains.length > 0) {
-            setDomains(airtableDomains);
-            return;
-          }
-        } catch (error) {
-          console.error("Error loading Airtable config:", error);
-        }
-      }
-
-      // Fallback to localStorage if Airtable fails or isn't configured
-      const storedDomains = loadDomains();
-      setDomains(storedDomains);
-    };
-
-    loadData();
+    const storedDomains = loadDomains();
+    setDomains(storedDomains);
   }, []);
 
   const handleViewChange = (view: "list" | "mindmap") => {
@@ -82,37 +48,15 @@ const Home = () => {
     setIsAddDomainOpen(true);
   };
 
-  const handleSaveDomain = async (formData: any) => {
-    const domainData = {
+  const handleSaveDomain = (formData: any) => {
+    const newDomain = addDomain({
       name: formData.domainName,
       url: formData.url,
       da: formData.da,
       dr: formData.dr,
-    };
+    });
 
-    if (usingAirtable) {
-      try {
-        const newDomain = await createAirtableDomain({
-          ...domainData,
-          id: Math.random().toString(36).substring(2, 9),
-          tasks: {},
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-
-        if (newDomain) {
-          setDomains((prev) => [...prev, newDomain]);
-        }
-      } catch (error) {
-        console.error("Error saving domain to Airtable:", error);
-        // Fallback to localStorage
-        const newDomain = addDomain(domainData);
-        setDomains((prev) => [...prev, newDomain]);
-      }
-    } else {
-      const newDomain = addDomain(domainData);
-      setDomains((prev) => [...prev, newDomain]);
-    }
+    setDomains((prev) => [...prev, newDomain]);
   };
 
   const handleEditDomain = (domain: Domain) => {
@@ -120,24 +64,10 @@ const Home = () => {
     setIsAddDomainOpen(true);
   };
 
-  const handleDeleteDomain = async (domain: Domain) => {
+  const handleDeleteDomain = (domain: Domain) => {
     if (window.confirm(`Are you sure you want to delete ${domain.name}?`)) {
-      if (usingAirtable) {
-        try {
-          const success = await deleteAirtableDomain(domain.id);
-          if (success) {
-            setDomains((prev) => prev.filter((d) => d.id !== domain.id));
-          }
-        } catch (error) {
-          console.error("Error deleting domain from Airtable:", error);
-          // Fallback to localStorage
-          deleteDomain(domain.id);
-          setDomains((prev) => prev.filter((d) => d.id !== domain.id));
-        }
-      } else {
-        deleteDomain(domain.id);
-        setDomains((prev) => prev.filter((d) => d.id !== domain.id));
-      }
+      deleteDomain(domain.id);
+      setDomains((prev) => prev.filter((d) => d.id !== domain.id));
     }
   };
 
@@ -156,7 +86,7 @@ const Home = () => {
     setIsTasksDialogOpen(true);
   };
 
-  const handleSaveTasks = async (updatedDomain: any) => {
+  const handleSaveTasks = (updatedDomain: any) => {
     // Convert task array to object format expected by DomainTable
     const tasksObject: Record<string, boolean> = {};
     if (Array.isArray(updatedDomain.tasks)) {
@@ -173,46 +103,10 @@ const Home = () => {
         : updatedDomain.tasks,
     };
 
-    if (usingAirtable) {
-      try {
-        const updated = await updateAirtableDomain(domainToUpdate);
-        if (updated) {
-          setDomains((prev) =>
-            prev.map((domain) => (domain.id === updated.id ? updated : domain)),
-          );
-        }
-      } catch (error) {
-        console.error("Error updating domain in Airtable:", error);
-        // Fallback to localStorage
-        const updated = updateDomain(domainToUpdate);
-        setDomains((prev) =>
-          prev.map((domain) => (domain.id === updated.id ? updated : domain)),
-        );
-      }
-    } else {
-      const updated = updateDomain(domainToUpdate);
-      setDomains((prev) =>
-        prev.map((domain) => (domain.id === updated.id ? updated : domain)),
-      );
-    }
-  };
-
-  const handleConfigAirtable = () => {
-    setIsAirtableConfigOpen(true);
-  };
-
-  const handleAirtableConfigSaved = async () => {
-    setUsingAirtable(true);
-
-    // Reload domains from Airtable
-    try {
-      const airtableDomains = await fetchAirtableDomains();
-      if (airtableDomains && airtableDomains.length > 0) {
-        setDomains(airtableDomains);
-      }
-    } catch (error) {
-      console.error("Error fetching domains from Airtable:", error);
-    }
+    const updated = updateDomain(domainToUpdate);
+    setDomains((prev) =>
+      prev.map((domain) => (domain.id === updated.id ? updated : domain)),
+    );
   };
 
   return (
@@ -229,7 +123,6 @@ const Home = () => {
       <DashboardHeader
         onAddDomain={handleAddDomain}
         onViewChange={handleViewChange}
-        onConfigAirtable={handleConfigAirtable}
         currentView={currentView}
       />
 
@@ -271,12 +164,6 @@ const Home = () => {
           onSave={handleSaveTasks}
         />
       )}
-
-      <AirtableConfigDialog
-        open={isAirtableConfigOpen}
-        onOpenChange={setIsAirtableConfigOpen}
-        onConfigSaved={handleAirtableConfigSaved}
-      />
     </div>
   );
 };

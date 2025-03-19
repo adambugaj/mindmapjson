@@ -17,6 +17,8 @@ interface Domain {
   id: string;
   name: string;
   url: string;
+  da?: number;
+  dr?: number;
   progress?: number;
   tasks?: Record<string, boolean>;
   createdAt?: string;
@@ -50,6 +52,8 @@ const Home = () => {
     const newDomain = addDomain({
       name: formData.domainName,
       url: formData.url,
+      da: formData.da,
+      dr: formData.dr,
     });
 
     setDomains((prev) => [...prev, newDomain]);

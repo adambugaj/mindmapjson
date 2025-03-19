@@ -27,6 +27,7 @@ import {
   SortDesc,
   ChevronDown,
   ChevronUp,
+  ExternalLink,
 } from "lucide-react";
 import { Progress } from "../ui/progress";
 import { Checkbox } from "../ui/checkbox";
@@ -35,6 +36,8 @@ export interface Domain {
   id: string;
   name: string;
   url: string;
+  da?: number;
+  dr?: number;
   tasks: {
     installation: boolean;
     configuration: boolean;
@@ -182,8 +185,9 @@ const DomainTable: React.FC<DomainTableProps> = ({
 
   const calculateProgress = (tasks: Domain["tasks"]) => {
     const totalTasks = Object.keys(tasks).length;
+    if (totalTasks === 0) return 0;
     const completedTasks = Object.values(tasks).filter(Boolean).length;
-    return (completedTasks / totalTasks) * 100;
+    return Math.round((completedTasks / totalTasks) * 100);
   };
 
   return (
@@ -234,20 +238,7 @@ const DomainTable: React.FC<DomainTableProps> = ({
                   ))}
               </div>
             </TableHead>
-            <TableHead
-              className="cursor-pointer"
-              onClick={() => handleSort("url")}
-            >
-              <div className="flex items-center gap-1">
-                URL
-                {sortConfig.key === "url" &&
-                  (sortConfig.direction === "asc" ? (
-                    <SortAsc className="h-4 w-4" />
-                  ) : (
-                    <SortDesc className="h-4 w-4" />
-                  ))}
-              </div>
-            </TableHead>
+            <TableHead className="hidden md:table-cell">DA/DR</TableHead>
             <TableHead className="hidden md:table-cell">Progress</TableHead>
             <TableHead className="hidden md:table-cell">Tasks</TableHead>
             <TableHead
@@ -274,21 +265,42 @@ const DomainTable: React.FC<DomainTableProps> = ({
               return (
                 <React.Fragment key={domain.id}>
                   <TableRow>
-                    <TableCell>{domain.name}</TableCell>
                     <TableCell>
-                      <a
-                        href={domain.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        {domain.url}
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <span>{domain.name}</span>
+                        <a
+                          href={domain.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <div className="flex items-center gap-2">
-                        <Progress value={progress} className="h-2 w-24" />
-                        <span className="text-sm">{Math.round(progress)}%</span>
+                        {domain.da && (
+                          <Badge variant="outline" className="bg-blue-50">
+                            DA {domain.da}
+                          </Badge>
+                        )}
+                        {domain.dr && (
+                          <Badge variant="outline" className="bg-green-50">
+                            DR {domain.dr}
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <div className="flex items-center gap-2">
+                        <Progress
+                          value={progress}
+                          className={`h-2 w-24 ${progress < 25 ? "bg-red-100" : progress < 50 ? "bg-yellow-100" : progress < 75 ? "bg-blue-100" : "bg-green-100"}`}
+                          indicatorClassName={`${progress < 25 ? "bg-red-500" : progress < 50 ? "bg-yellow-500" : progress < 75 ? "bg-blue-500" : "bg-green-500"}`}
+                        />
+                        <span className="text-sm">{progress}%</span>
                       </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
@@ -297,20 +309,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                           <Checkbox
                             id={`installation-${domain.id}`}
                             checked={domain.tasks.installation}
-                            onCheckedChange={() =>
+                            onCheckedChange={(checked) => {
                               onViewTasks({
                                 ...domain,
                                 tasks: {
                                   ...domain.tasks,
-                                  installation: !domain.tasks.installation,
+                                  installation: !!checked,
                                 },
-                              })
-                            }
+                              });
+                            }}
+                            onClick={(e) => e.stopPropagation()}
                             className="h-4 w-4"
                           />
                           <label
                             htmlFor={`installation-${domain.id}`}
-                            className="text-xs"
+                            className={`text-xs ${domain.tasks.installation ? "text-green-600 font-medium" : "text-gray-500"}`}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             Install
                           </label>
@@ -319,20 +333,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                           <Checkbox
                             id={`configuration-${domain.id}`}
                             checked={domain.tasks.configuration}
-                            onCheckedChange={() =>
+                            onCheckedChange={(checked) => {
                               onViewTasks({
                                 ...domain,
                                 tasks: {
                                   ...domain.tasks,
-                                  configuration: !domain.tasks.configuration,
+                                  configuration: !!checked,
                                 },
-                              })
-                            }
+                              });
+                            }}
+                            onClick={(e) => e.stopPropagation()}
                             className="h-4 w-4"
                           />
                           <label
                             htmlFor={`configuration-${domain.id}`}
-                            className="text-xs"
+                            className={`text-xs ${domain.tasks.configuration ? "text-green-600 font-medium" : "text-gray-500"}`}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             Config
                           </label>
@@ -341,20 +357,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                           <Checkbox
                             id={`gscSetup-${domain.id}`}
                             checked={domain.tasks.gscSetup}
-                            onCheckedChange={() =>
+                            onCheckedChange={(checked) => {
                               onViewTasks({
                                 ...domain,
                                 tasks: {
                                   ...domain.tasks,
-                                  gscSetup: !domain.tasks.gscSetup,
+                                  gscSetup: !!checked,
                                 },
-                              })
-                            }
+                              });
+                            }}
+                            onClick={(e) => e.stopPropagation()}
                             className="h-4 w-4"
                           />
                           <label
                             htmlFor={`gscSetup-${domain.id}`}
-                            className="text-xs"
+                            className={`text-xs ${domain.tasks.gscSetup ? "text-green-600 font-medium" : "text-gray-500"}`}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             GSC
                           </label>
@@ -363,20 +381,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                           <Checkbox
                             id={`content-${domain.id}`}
                             checked={domain.tasks.content}
-                            onCheckedChange={() =>
+                            onCheckedChange={(checked) => {
                               onViewTasks({
                                 ...domain,
                                 tasks: {
                                   ...domain.tasks,
-                                  content: !domain.tasks.content,
+                                  content: !!checked,
                                 },
-                              })
-                            }
+                              });
+                            }}
+                            onClick={(e) => e.stopPropagation()}
                             className="h-4 w-4"
                           />
                           <label
                             htmlFor={`content-${domain.id}`}
-                            className="text-xs"
+                            className={`text-xs ${domain.tasks.content ? "text-green-600 font-medium" : "text-gray-500"}`}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             Content
                           </label>
@@ -385,20 +405,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                           <Checkbox
                             id={`wwwStatus-${domain.id}`}
                             checked={domain.tasks.wwwStatus}
-                            onCheckedChange={() =>
+                            onCheckedChange={(checked) => {
                               onViewTasks({
                                 ...domain,
                                 tasks: {
                                   ...domain.tasks,
-                                  wwwStatus: !domain.tasks.wwwStatus,
+                                  wwwStatus: !!checked,
                                 },
-                              })
-                            }
+                              });
+                            }}
+                            onClick={(e) => e.stopPropagation()}
                             className="h-4 w-4"
                           />
                           <label
                             htmlFor={`wwwStatus-${domain.id}`}
-                            className="text-xs"
+                            className={`text-xs ${domain.tasks.wwwStatus ? "text-green-600 font-medium" : "text-gray-500"}`}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             WWW
                           </label>
@@ -407,20 +429,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                           <Checkbox
                             id={`uxPublishing-${domain.id}`}
                             checked={domain.tasks.uxPublishing}
-                            onCheckedChange={() =>
+                            onCheckedChange={(checked) => {
                               onViewTasks({
                                 ...domain,
                                 tasks: {
                                   ...domain.tasks,
-                                  uxPublishing: !domain.tasks.uxPublishing,
+                                  uxPublishing: !!checked,
                                 },
-                              })
-                            }
+                              });
+                            }}
+                            onClick={(e) => e.stopPropagation()}
                             className="h-4 w-4"
                           />
                           <label
                             htmlFor={`uxPublishing-${domain.id}`}
-                            className="text-xs"
+                            className={`text-xs ${domain.tasks.uxPublishing ? "text-green-600 font-medium" : "text-gray-500"}`}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             UX
                           </label>
@@ -429,20 +453,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                           <Checkbox
                             id={`traffic-${domain.id}`}
                             checked={domain.tasks.traffic}
-                            onCheckedChange={() =>
+                            onCheckedChange={(checked) => {
                               onViewTasks({
                                 ...domain,
                                 tasks: {
                                   ...domain.tasks,
-                                  traffic: !domain.tasks.traffic,
+                                  traffic: !!checked,
                                 },
-                              })
-                            }
+                              });
+                            }}
+                            onClick={(e) => e.stopPropagation()}
                             className="h-4 w-4"
                           />
                           <label
                             htmlFor={`traffic-${domain.id}`}
-                            className="text-xs"
+                            className={`text-xs ${domain.tasks.traffic ? "text-green-600 font-medium" : "text-gray-500"}`}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             Traffic
                           </label>
@@ -451,20 +477,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                           <Checkbox
                             id={`monetization-${domain.id}`}
                             checked={domain.tasks.monetization}
-                            onCheckedChange={() =>
+                            onCheckedChange={(checked) => {
                               onViewTasks({
                                 ...domain,
                                 tasks: {
                                   ...domain.tasks,
-                                  monetization: !domain.tasks.monetization,
+                                  monetization: !!checked,
                                 },
-                              })
-                            }
+                              });
+                            }}
+                            onClick={(e) => e.stopPropagation()}
                             className="h-4 w-4"
                           />
                           <label
                             htmlFor={`monetization-${domain.id}`}
-                            className="text-xs"
+                            className={`text-xs ${domain.tasks.monetization ? "text-green-600 font-medium" : "text-gray-500"}`}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             Money
                           </label>
@@ -537,30 +565,34 @@ const DomainTable: React.FC<DomainTableProps> = ({
                       <TableCell colSpan={5} className="p-2">
                         <div className="bg-gray-50 p-3 rounded-md">
                           <div className="flex items-center gap-2 mb-2">
-                            <Progress value={progress} className="h-2 flex-1" />
-                            <span className="text-sm">
-                              {Math.round(progress)}%
-                            </span>
+                            <Progress
+                              value={progress}
+                              className={`h-2 flex-1 ${progress < 25 ? "bg-red-100" : progress < 50 ? "bg-yellow-100" : progress < 75 ? "bg-blue-100" : "bg-green-100"}`}
+                              indicatorClassName={`${progress < 25 ? "bg-red-500" : progress < 50 ? "bg-yellow-500" : progress < 75 ? "bg-blue-500" : "bg-green-500"}`}
+                            />
+                            <span className="text-sm">{progress}%</span>
                           </div>
                           <div className="grid grid-cols-2 gap-2">
                             <div className="flex gap-1 items-center">
                               <Checkbox
                                 id={`mobile-installation-${domain.id}`}
                                 checked={domain.tasks.installation}
-                                onCheckedChange={() =>
+                                onCheckedChange={(checked) => {
                                   onViewTasks({
                                     ...domain,
                                     tasks: {
                                       ...domain.tasks,
-                                      installation: !domain.tasks.installation,
+                                      installation: !!checked,
                                     },
-                                  })
-                                }
+                                  });
+                                }}
+                                onClick={(e) => e.stopPropagation()}
                                 className="h-4 w-4"
                               />
                               <label
                                 htmlFor={`mobile-installation-${domain.id}`}
-                                className="text-sm"
+                                className={`text-sm ${domain.tasks.installation ? "text-green-600 font-medium" : "text-gray-500"}`}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 Installation
                               </label>
@@ -569,21 +601,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                               <Checkbox
                                 id={`mobile-configuration-${domain.id}`}
                                 checked={domain.tasks.configuration}
-                                onCheckedChange={() =>
+                                onCheckedChange={(checked) => {
                                   onViewTasks({
                                     ...domain,
                                     tasks: {
                                       ...domain.tasks,
-                                      configuration:
-                                        !domain.tasks.configuration,
+                                      configuration: !!checked,
                                     },
-                                  })
-                                }
+                                  });
+                                }}
+                                onClick={(e) => e.stopPropagation()}
                                 className="h-4 w-4"
                               />
                               <label
                                 htmlFor={`mobile-configuration-${domain.id}`}
-                                className="text-sm"
+                                className={`text-sm ${domain.tasks.configuration ? "text-green-600 font-medium" : "text-gray-500"}`}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 Configuration
                               </label>
@@ -592,20 +625,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                               <Checkbox
                                 id={`mobile-gscSetup-${domain.id}`}
                                 checked={domain.tasks.gscSetup}
-                                onCheckedChange={() =>
+                                onCheckedChange={(checked) => {
                                   onViewTasks({
                                     ...domain,
                                     tasks: {
                                       ...domain.tasks,
-                                      gscSetup: !domain.tasks.gscSetup,
+                                      gscSetup: !!checked,
                                     },
-                                  })
-                                }
+                                  });
+                                }}
+                                onClick={(e) => e.stopPropagation()}
                                 className="h-4 w-4"
                               />
                               <label
                                 htmlFor={`mobile-gscSetup-${domain.id}`}
-                                className="text-sm"
+                                className={`text-sm ${domain.tasks.gscSetup ? "text-green-600 font-medium" : "text-gray-500"}`}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 GSC Setup
                               </label>
@@ -614,20 +649,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                               <Checkbox
                                 id={`mobile-content-${domain.id}`}
                                 checked={domain.tasks.content}
-                                onCheckedChange={() =>
+                                onCheckedChange={(checked) => {
                                   onViewTasks({
                                     ...domain,
                                     tasks: {
                                       ...domain.tasks,
-                                      content: !domain.tasks.content,
+                                      content: !!checked,
                                     },
-                                  })
-                                }
+                                  });
+                                }}
+                                onClick={(e) => e.stopPropagation()}
                                 className="h-4 w-4"
                               />
                               <label
                                 htmlFor={`mobile-content-${domain.id}`}
-                                className="text-sm"
+                                className={`text-sm ${domain.tasks.content ? "text-green-600 font-medium" : "text-gray-500"}`}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 Content
                               </label>
@@ -636,20 +673,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                               <Checkbox
                                 id={`mobile-wwwStatus-${domain.id}`}
                                 checked={domain.tasks.wwwStatus}
-                                onCheckedChange={() =>
+                                onCheckedChange={(checked) => {
                                   onViewTasks({
                                     ...domain,
                                     tasks: {
                                       ...domain.tasks,
-                                      wwwStatus: !domain.tasks.wwwStatus,
+                                      wwwStatus: !!checked,
                                     },
-                                  })
-                                }
+                                  });
+                                }}
+                                onClick={(e) => e.stopPropagation()}
                                 className="h-4 w-4"
                               />
                               <label
                                 htmlFor={`mobile-wwwStatus-${domain.id}`}
-                                className="text-sm"
+                                className={`text-sm ${domain.tasks.wwwStatus ? "text-green-600 font-medium" : "text-gray-500"}`}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 WWW Status
                               </label>
@@ -658,20 +697,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                               <Checkbox
                                 id={`mobile-uxPublishing-${domain.id}`}
                                 checked={domain.tasks.uxPublishing}
-                                onCheckedChange={() =>
+                                onCheckedChange={(checked) => {
                                   onViewTasks({
                                     ...domain,
                                     tasks: {
                                       ...domain.tasks,
-                                      uxPublishing: !domain.tasks.uxPublishing,
+                                      uxPublishing: !!checked,
                                     },
-                                  })
-                                }
+                                  });
+                                }}
+                                onClick={(e) => e.stopPropagation()}
                                 className="h-4 w-4"
                               />
                               <label
                                 htmlFor={`mobile-uxPublishing-${domain.id}`}
-                                className="text-sm"
+                                className={`text-sm ${domain.tasks.uxPublishing ? "text-green-600 font-medium" : "text-gray-500"}`}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 UX Publishing
                               </label>
@@ -680,20 +721,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                               <Checkbox
                                 id={`mobile-traffic-${domain.id}`}
                                 checked={domain.tasks.traffic}
-                                onCheckedChange={() =>
+                                onCheckedChange={(checked) => {
                                   onViewTasks({
                                     ...domain,
                                     tasks: {
                                       ...domain.tasks,
-                                      traffic: !domain.tasks.traffic,
+                                      traffic: !!checked,
                                     },
-                                  })
-                                }
+                                  });
+                                }}
+                                onClick={(e) => e.stopPropagation()}
                                 className="h-4 w-4"
                               />
                               <label
                                 htmlFor={`mobile-traffic-${domain.id}`}
-                                className="text-sm"
+                                className={`text-sm ${domain.tasks.traffic ? "text-green-600 font-medium" : "text-gray-500"}`}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 Traffic
                               </label>
@@ -702,20 +745,22 @@ const DomainTable: React.FC<DomainTableProps> = ({
                               <Checkbox
                                 id={`mobile-monetization-${domain.id}`}
                                 checked={domain.tasks.monetization}
-                                onCheckedChange={() =>
+                                onCheckedChange={(checked) => {
                                   onViewTasks({
                                     ...domain,
                                     tasks: {
                                       ...domain.tasks,
-                                      monetization: !domain.tasks.monetization,
+                                      monetization: !!checked,
                                     },
-                                  })
-                                }
+                                  });
+                                }}
+                                onClick={(e) => e.stopPropagation()}
                                 className="h-4 w-4"
                               />
                               <label
                                 htmlFor={`mobile-monetization-${domain.id}`}
-                                className="text-sm"
+                                className={`text-sm ${domain.tasks.monetization ? "text-green-600 font-medium" : "text-gray-500"}`}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 Monetization
                               </label>

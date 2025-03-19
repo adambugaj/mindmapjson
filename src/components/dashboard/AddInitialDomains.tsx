@@ -1,25 +1,6 @@
 import React, { useEffect } from "react";
 import { addMultipleDomains } from "../../lib/domainStorage";
 
-const domainUrls = [
-  "finansowyplac.pl",
-  "kredytjuzdzis.pl",
-  "kredytoweprzypadki.pl",
-  "kredytnazycie.pl",
-  "https://toseemore.pl",
-  "https://access-technology.net",
-  "https://LatestExam.de",
-  "https://ushops.net",
-  "https://seekphp.com",
-  "https://bpmplumbing.com",
-  "https://serwisantdrukarek.pl",
-  "https://dermatologholistyczny.pl",
-  "xcomputer.site",
-  "latestexam.de",
-  "randkawedwoje.pl",
-  "portalrandkowy24.pl",
-];
-
 interface AddInitialDomainsProps {
   onComplete: () => void;
 }
@@ -28,8 +9,28 @@ const AddInitialDomains: React.FC<AddInitialDomainsProps> = ({
   onComplete,
 }) => {
   useEffect(() => {
+    // Domain data with DA/DR values
+    const domainData = [
+      { url: "finansowyplac.pl", da: 21 },
+      { url: "kredytjuzdzis.pl", da: 22 },
+      { url: "kredytoweprzypadki.pl", da: 22 },
+      { url: "kredytnazycie.pl", da: 22 },
+      { url: "toseemore.pl", da: 8, dr: 32 },
+      { url: "access-technology.net", da: 11 },
+      { url: "LatestExam.de", da: 14 },
+      { url: "ushops.net", da: 16 },
+      { url: "seekphp.com", da: 7 },
+      { url: "bpmplumbing.com", da: 14 },
+      { url: "serwisantdrukarek.pl", da: 7 },
+      { url: "dermatologholistyczny.pl", da: 12 },
+      { url: "xcomputer.site" },
+      { url: "latestexam.de", da: 14 },
+      { url: "randkawedwoje.pl" },
+      { url: "portalrandkowy24.pl" },
+    ];
+
     // Add all domains
-    addMultipleDomains(domainUrls);
+    addMultipleDomains(domainData);
 
     // Call the onComplete callback
     onComplete();

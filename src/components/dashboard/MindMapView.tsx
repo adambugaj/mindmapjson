@@ -18,6 +18,8 @@ export interface Domain {
   id: string;
   name: string;
   url: string;
+  da?: number;
+  dr?: number;
   tasks: {
     installation: boolean;
     configuration: boolean;
@@ -200,6 +202,27 @@ const MindMapView: React.FC<MindMapViewProps> = ({
                         ></div>
                       </div>
                     </div>
+
+                    {(domain.da || domain.dr) && (
+                      <div className="flex gap-1 mb-2">
+                        {domain.da && (
+                          <Badge
+                            variant="outline"
+                            className="bg-blue-50 text-xs"
+                          >
+                            DA {domain.da}
+                          </Badge>
+                        )}
+                        {domain.dr && (
+                          <Badge
+                            variant="outline"
+                            className="bg-green-50 text-xs"
+                          >
+                            DR {domain.dr}
+                          </Badge>
+                        )}
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-1 text-xs">
                       <div className="flex items-center gap-1">

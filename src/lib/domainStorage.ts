@@ -10,6 +10,8 @@ export interface Domain {
   id: string;
   name: string;
   url: string;
+  da?: number;
+  dr?: number;
   tasks: Task[];
   createdAt: string;
   updatedAt: string;
@@ -61,7 +63,10 @@ export const saveDomains = (domains: Domain[]): void => {
 
 // Add a new domain
 export const addDomain = (
-  domainData: Omit<Domain, "id" | "tasks" | "createdAt" | "updatedAt">,
+  domainData: Omit<Domain, "id" | "tasks" | "createdAt" | "updatedAt"> & {
+    da?: number;
+    dr?: number;
+  },
 ): Domain => {
   const domains = loadDomains();
 
@@ -89,6 +94,8 @@ export const addDomain = (
   const newDomain: Domain = {
     id: generateId(),
     ...domainData,
+    da: domainData.da,
+    dr: domainData.dr,
     tasks: DEFAULT_TASKS.map((task) => ({ ...task, id: generateId() })),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -101,12 +108,15 @@ export const addDomain = (
 };
 
 // Add multiple domains at once
-export const addMultipleDomains = (domainUrls: string[]): Domain[] => {
+export const addMultipleDomains = (
+  domainData: Array<{ url: string; da?: number; dr?: number }>,
+): Domain[] => {
   const domains = loadDomains();
   const newDomains: Domain[] = [];
   const processedUrls = new Set(); // Track processed URLs to avoid duplicates
 
-  domainUrls.forEach((url) => {
+  domainData.forEach((data) => {
+    const url = data.url;
     // Normalize URL for comparison
     const normalizedUrl = url
       .toLowerCase()
@@ -137,6 +147,8 @@ export const addMultipleDomains = (domainUrls: string[]): Domain[] => {
       id: generateId(),
       name: name,
       url: url.startsWith("http") ? url : `https://${url}`,
+      da: data.da,
+      dr: data.dr,
       tasks: DEFAULT_TASKS.map((task) => ({ ...task, id: generateId() })),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

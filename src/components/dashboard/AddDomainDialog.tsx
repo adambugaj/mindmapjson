@@ -31,6 +31,8 @@ import {
 const formSchema = z.object({
   domainName: z.string().min(1, { message: "Domain name is required" }),
   url: z.string().url({ message: "Please enter a valid URL" }),
+  da: z.number().min(0).max(100).optional(),
+  dr: z.number().min(0).max(100).optional(),
   installation: z.boolean().default(false),
   configuration: z.boolean().default(false),
   gscSetup: z.boolean().default(false),
@@ -61,6 +63,8 @@ const AddDomainDialog = ({
     defaultValues: {
       domainName: "",
       url: "",
+      da: undefined,
+      dr: undefined,
       installation: false,
       configuration: false,
       gscSetup: false,
@@ -130,6 +134,60 @@ const AddDomainDialog = ({
                 </FormItem>
               )}
             />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="da"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Domain Authority (DA)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="0-100"
+                        {...field}
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === ""
+                              ? undefined
+                              : Number(e.target.value);
+                          field.onChange(value);
+                        }}
+                        value={field.value === undefined ? "" : field.value}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="dr"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Domain Rating (DR)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="0-100"
+                        {...field}
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === ""
+                              ? undefined
+                              : Number(e.target.value);
+                          field.onChange(value);
+                        }}
+                        value={field.value === undefined ? "" : field.value}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Initial Task Status</h3>

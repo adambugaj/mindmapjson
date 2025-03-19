@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Table,
   TableBody,
@@ -125,6 +125,32 @@ const DomainTable: React.FC<DomainTableProps> = ({
     key: "createdAt",
     direction: "desc",
   });
+
+  // Ref to prevent panel popup when clicking checkboxes
+  const checkboxClickRef = useRef<boolean>(false);
+
+  // Add event listener to prevent panel popup
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      // If the click originated from a checkbox, prevent panel popup
+      if (checkboxClickRef.current) {
+        e.stopPropagation();
+        // Reset the flag
+        checkboxClickRef.current = false;
+      }
+    };
+
+    // Remove any existing panel element that might cause popups
+    const panelElement = document.querySelector("#radix-\\:rcn\\:");
+    if (panelElement) {
+      panelElement.remove();
+    }
+
+    document.addEventListener("click", handleClick, true);
+    return () => {
+      document.removeEventListener("click", handleClick, true);
+    };
+  }, []);
 
   useEffect(() => {
     // Filter domains based on search term
@@ -318,8 +344,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                 },
                               });
                             }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              checkboxClickRef.current = true;
+                            }}
+                            className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                           />
                           <label
                             htmlFor={`installation-${domain.id}`}
@@ -342,8 +371,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                 },
                               });
                             }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              checkboxClickRef.current = true;
+                            }}
+                            className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                           />
                           <label
                             htmlFor={`configuration-${domain.id}`}
@@ -366,8 +398,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                 },
                               });
                             }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              checkboxClickRef.current = true;
+                            }}
+                            className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                           />
                           <label
                             htmlFor={`gscSetup-${domain.id}`}
@@ -390,8 +425,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                 },
                               });
                             }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              checkboxClickRef.current = true;
+                            }}
+                            className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                           />
                           <label
                             htmlFor={`content-${domain.id}`}
@@ -414,8 +452,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                 },
                               });
                             }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              checkboxClickRef.current = true;
+                            }}
+                            className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                           />
                           <label
                             htmlFor={`wwwStatus-${domain.id}`}
@@ -438,8 +479,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                 },
                               });
                             }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              checkboxClickRef.current = true;
+                            }}
+                            className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                           />
                           <label
                             htmlFor={`uxPublishing-${domain.id}`}
@@ -462,8 +506,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                 },
                               });
                             }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              checkboxClickRef.current = true;
+                            }}
+                            className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                           />
                           <label
                             htmlFor={`traffic-${domain.id}`}
@@ -486,8 +533,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                 },
                               });
                             }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="h-4 w-4"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              checkboxClickRef.current = true;
+                            }}
+                            className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                           />
                           <label
                             htmlFor={`monetization-${domain.id}`}
@@ -586,8 +636,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                     },
                                   });
                                 }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="h-4 w-4"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  checkboxClickRef.current = true;
+                                }}
+                                className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                               />
                               <label
                                 htmlFor={`mobile-installation-${domain.id}`}
@@ -610,8 +663,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                     },
                                   });
                                 }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="h-4 w-4"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  checkboxClickRef.current = true;
+                                }}
+                                className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                               />
                               <label
                                 htmlFor={`mobile-configuration-${domain.id}`}
@@ -634,8 +690,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                     },
                                   });
                                 }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="h-4 w-4"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  checkboxClickRef.current = true;
+                                }}
+                                className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                               />
                               <label
                                 htmlFor={`mobile-gscSetup-${domain.id}`}
@@ -658,8 +717,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                     },
                                   });
                                 }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="h-4 w-4"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  checkboxClickRef.current = true;
+                                }}
+                                className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                               />
                               <label
                                 htmlFor={`mobile-content-${domain.id}`}
@@ -682,8 +744,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                     },
                                   });
                                 }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="h-4 w-4"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  checkboxClickRef.current = true;
+                                }}
+                                className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                               />
                               <label
                                 htmlFor={`mobile-wwwStatus-${domain.id}`}
@@ -706,8 +771,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                     },
                                   });
                                 }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="h-4 w-4"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  checkboxClickRef.current = true;
+                                }}
+                                className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                               />
                               <label
                                 htmlFor={`mobile-uxPublishing-${domain.id}`}
@@ -730,8 +798,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                     },
                                   });
                                 }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="h-4 w-4"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  checkboxClickRef.current = true;
+                                }}
+                                className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                               />
                               <label
                                 htmlFor={`mobile-traffic-${domain.id}`}
@@ -754,8 +825,11 @@ const DomainTable: React.FC<DomainTableProps> = ({
                                     },
                                   });
                                 }}
-                                onClick={(e) => e.stopPropagation()}
-                                className="h-4 w-4"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  checkboxClickRef.current = true;
+                                }}
+                                className="h-4 w-4 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                               />
                               <label
                                 htmlFor={`mobile-monetization-${domain.id}`}

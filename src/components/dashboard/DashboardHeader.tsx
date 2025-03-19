@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { Button } from "../ui/button";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
-import { PlusCircle, List, Network } from "lucide-react";
+import { PlusCircle, List, Network, Database } from "lucide-react";
 
 interface DashboardHeaderProps {
   onAddDomain?: () => void;
   onViewChange?: (view: "list" | "mindmap") => void;
+  onConfigAirtable?: () => void;
   currentView?: "list" | "mindmap";
   title?: string;
 }
@@ -13,6 +14,7 @@ interface DashboardHeaderProps {
 const DashboardHeader = ({
   onAddDomain = () => {},
   onViewChange = () => {},
+  onConfigAirtable = () => {},
   currentView = "list",
   title = "PBN Domain Management",
 }: DashboardHeaderProps) => {
@@ -47,6 +49,15 @@ const DashboardHeader = ({
             </TabsTrigger>
           </TabsList>
         </Tabs>
+
+        <Button
+          onClick={onConfigAirtable}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          <Database className="h-4 w-4" />
+          Airtable
+        </Button>
 
         <Button
           onClick={onAddDomain}
